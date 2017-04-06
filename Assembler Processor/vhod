@@ -1,0 +1,11 @@
+IN %1
+MOVR %2 %1
+CALL :1
+:1
+JE %2 $1 :2
+DEC %2
+RMUL %1 %2
+CALL :1
+RET
+:2
+OUT %1
