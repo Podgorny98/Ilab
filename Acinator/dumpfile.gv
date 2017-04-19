@@ -1,0 +1,19 @@
+digraph graf{
+treeNode_0x1566e60 [label="[0x1566e60]\lleft [0x1566f80]\lright [0x15672e0]\lfather [(nil)]\ldata[0x1566e60] = Does he teach linal?"]
+treeNode_0x1566e60->treeNode_0x1566f80
+treeNode_0x1566f80 [label="[0x1566f80]\lleft [0x1567e60]\lright [0x15671c0]\lfather [0x1566e60]\ldata[0x1566f80] = Does he teach physics?"]
+treeNode_0x1566f80->treeNode_0x1567e60
+treeNode_0x1567e60 [label="[0x1567e60]\lleft [0x15670a0]\lright [0x1567f80]\lfather [0x1566f80]\ldata[0x1567e60] = Does he teach IT??"]
+treeNode_0x1567e60->treeNode_0x15670a0
+treeNode_0x15670a0 [label="[0x15670a0]\lleft [(nil)]\lright [(nil)]\lfather [0x1567e60]\ldata[0x15670a0] = Is it Golubev?"]
+treeNode_0x1567e60->treeNode_0x1567f80
+treeNode_0x1567f80 [label="[0x1567f80]\lleft [(nil)]\lright [(nil)]\lfather [0x1567e60]\ldata[0x1567f80] = Is it Ded?"]
+treeNode_0x1566f80->treeNode_0x15671c0
+treeNode_0x15671c0 [label="[0x15671c0]\lleft [(nil)]\lright [(nil)]\lfather [0x1566f80]\ldata[0x15671c0] = Is it Ovchinkin?"]
+treeNode_0x1566e60->treeNode_0x15672e0
+treeNode_0x15672e0 [label="[0x15672e0]\lleft [0x1567400]\lright [0x1567520]\lfather [0x1566e60]\ldata[0x15672e0] = Is he very very very jostkyi?"]
+treeNode_0x15672e0->treeNode_0x1567400
+treeNode_0x1567400 [label="[0x1567400]\lleft [(nil)]\lright [(nil)]\lfather [0x15672e0]\ldata[0x1567400] = Is it Proncheva?"]
+treeNode_0x15672e0->treeNode_0x1567520
+treeNode_0x1567520 [label="[0x1567520]\lleft [(nil)]\lright [(nil)]\lfather [0x15672e0]\ldata[0x1567520] = Is it Bek?"]
+}

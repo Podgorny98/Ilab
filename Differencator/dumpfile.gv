@@ -1,0 +1,47 @@
+digraph graf{
+treeNode_0x17141e0 [label="\l+"]
+treeNode_0x17141e0->treeNode_0x1714750
+treeNode_0x1714750 [label="\l/"]
+treeNode_0x1714750->treeNode_0x1714780
+treeNode_0x1714780 [label="\l^"]
+treeNode_0x1714780->treeNode_0x17147b0
+treeNode_0x17147b0 [label="\lx"]
+treeNode_0x1714780->treeNode_0x17147e0
+treeNode_0x17147e0 [label="\l4"]
+treeNode_0x1714750->treeNode_0x1714810
+treeNode_0x1714810 [label="\lx"]
+treeNode_0x17141e0->treeNode_0x1714240
+treeNode_0x1714240 [label="\l*"]
+treeNode_0x1714240->treeNode_0x1714390
+treeNode_0x1714390 [label="\lx"]
+treeNode_0x1714240->treeNode_0x17143c0
+treeNode_0x17143c0 [label="\l/"]
+treeNode_0x17143c0->treeNode_0x17143f0
+treeNode_0x17143f0 [label="\l-"]
+treeNode_0x17143f0->treeNode_0x1714450
+treeNode_0x1714450 [label="\l*"]
+treeNode_0x1714450->treeNode_0x1714210
+treeNode_0x1714210 [label="\l*"]
+treeNode_0x1714210->treeNode_0x17142a0
+treeNode_0x17142a0 [label="\l^"]
+treeNode_0x17142a0->treeNode_0x1714360
+treeNode_0x1714360 [label="\lx"]
+treeNode_0x17142a0->treeNode_0x17142d0
+treeNode_0x17142d0 [label="\l3"]
+treeNode_0x1714210->treeNode_0x1714330
+treeNode_0x1714330 [label="\l4"]
+treeNode_0x1714450->treeNode_0x1714660
+treeNode_0x1714660 [label="\lx"]
+treeNode_0x17143f0->treeNode_0x1714510
+treeNode_0x1714510 [label="\l^"]
+treeNode_0x1714510->treeNode_0x1714570
+treeNode_0x1714570 [label="\lx"]
+treeNode_0x1714510->treeNode_0x1714540
+treeNode_0x1714540 [label="\l4"]
+treeNode_0x17143c0->treeNode_0x1714420
+treeNode_0x1714420 [label="\l^"]
+treeNode_0x1714420->treeNode_0x17144e0
+treeNode_0x17144e0 [label="\lx"]
+treeNode_0x1714420->treeNode_0x17144b0
+treeNode_0x17144b0 [label="\l2"]
+}
