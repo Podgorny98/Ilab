@@ -2,13 +2,12 @@ Node* Differentiator :: c(Node* CurNode) {
 	Node* CopyNode = new Node(" ", NULL);
 	CopyNode->type = CurNode->type;
 	CopyNode->data = CurNode->data;
-	if(CurNode->left) {
-		CopyNode->left = c(CurNode->left);
-		CopyNode->left->parent = CopyNode;
-	}
-	if(CurNode->right) {
-		CopyNode->right = c(CurNode->right);
-		CopyNode->right->parent = CopyNode;
+	CopyNode->ChildQt = CurNode->ChildQt;
+	for(int i = 0; i < CurNode->ChildQt; i++) {
+		if(CurNode->children[i]) {
+			CopyNode->children[i] = c(CurNode->children[i]);
+			CopyNode->children[i]->parent = CopyNode;
+		}
 	}
 	return CopyNode;
 }

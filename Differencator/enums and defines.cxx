@@ -35,3 +35,4 @@ enum Passes {
 	PASS_PREFIX,
 	PASS_INFIX
 };
+enum {CHILDREN_QT = 10};

@@ -1,22 +1,13 @@
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include "enums and defines.cxx"
-
 typedef double TreeNodeType;
-
-class Node {
-public:
-	Types type;
-	TreeNodeType data;
-	Node* parent;
-	Node * left;
-	Node * right;
-	Node(const char* str, Node* par);
-	~Node();
-	int GetPriority();
-};
+#include "class Node.cxx"
+#define left children[0]
+#define right children[1]
 
 class Differentiator {
 private:
@@ -24,10 +15,18 @@ private:
 	Node* d(Node* CurNode);	//дифференцирует дерево 
 	Node* c(Node* CurNode);	//копирует дерево //TODO WTF GAVNO ZHOPA XYUNA NAMES
 	Node* simplification(Node* CurNode);	//делает дерево проще
+	//void ToBinarnoe(Node* CurNode);
+	//void ToNarnoe(Node* CurNode);
 	void save(FILE* f, Node* CurNode);
 	void NodeDump(Node* CurNode, FILE* DumpFile);
 	int IsLeft(Node* CurNode);
 	void visitor(Node* CurNode, Passes pass, void act(Node*));
+	int compare(Node* node1, Node* node2);
+	double CheckSimilarSummands(Node* n1, Node* n2);
+	double CheckSimilarMultipliers(Node* n1, Node* n2);
+	void PrivedeniePodobnyhSlagaemyh(Node* CurNode);
+	void PrivedeniePodobnyhMnojitelei(Node* CurNode);
+	void AddMulWithOneSon(Node* CurNode);	//упрощает дерево если у + или * один ребёнок
 	Node* d_add(Node* CurNode);
 	Node* d_sub(Node* CurNode);
 	Node* d_mul(Node* CurNode); //TODO use defines
@@ -50,6 +49,10 @@ public:
 	Node* DifTree;
 	Differentiator(FILE* f);
 	~Differentiator();
+	void PrivedeniePodobnyh(Node* CurNode);
+	void ToNarnoe(Node* CurNode);
+	void ToBinarnoe(Node* CurNode);
+	void SvertkaConstant(Node* CurNode);
 	void differentiator();
 	void print(Node* tree);
 	void dump();
@@ -57,45 +60,24 @@ public:
 	void ok(Node* CurNode);
 };
 #include "functions.cxx"
+#include "dump functions.cxx"
 //======================================================================
 int main() {
 	FILE* in;
 	FOPEN(in, "in", "r")
-	FILE* TexFile;
-	FOPEN(TexFile, "TexDump.tex", "w")
+	//FILE* TexFile;
+	//FOPEN(TexFile, "TexDump.tex", "w")
 	Differentiator a(in);
-	a.differentiator();
+	a.ToNarnoe(a.tree);
+	a.SvertkaConstant(a.tree);
+	a.PrivedeniePodobnyh(a.tree);
+	//a.ToBinarnoe(a.tree);
+	//a.differentiator();
 	a.dump();
-	a.TexDump(TexFile);
+	//a.TexDump(TexFile);
 	FCLOSE(in)
-	FCLOSE(TexFile)
+	//FCLOSE(TexFile)
 	return 0;
-}
-//======================================================================
-Node :: Node(const char* str, Node* par) {
-#define DEF_DATA(Str, Type, Data, function, priority) {	\
-	if(!strcmp(str, Str)) {					\
-		type = Type;						\
-		data = Data;						\
-		left = right = NULL;				\
-		parent = par;						\
-		return;								\
-	}										\
-}
-#include "def_data.cxx"
-#undef DEF_DATA
-	type = TYPE_CONST;
-	data = atof(str);
-	left = right = NULL;
-	parent = par;
-}
-//====================================================================== //TODO make two separate files
-Node :: ~Node() {
-	if(left)
-		delete left;
-	if(right)
-		delete right;
-	parent = right = left = NULL;
 }
 //======================================================================
 Differentiator ::Differentiator(FILE* f) {
@@ -104,10 +86,10 @@ Differentiator ::Differentiator(FILE* f) {
 Differentiator :: ~Differentiator() {
 	FILE* out; //TODO output file from main
 	FOPEN(out, "Otvet", "w")
-	save(out, DifTree);
+	//save(out, DifTree);
 	FCLOSE(out)
 	delete tree;
-	delete DifTree;
+	//delete DifTree;
 	tree = NULL;
 	DifTree = NULL;
 }
@@ -129,14 +111,16 @@ Node* Differentiator ::  make_tree(FILE* f, Node* CurFather) {
 	
 	CurChar = fgetc(f);
 	ungetc(CurChar, f);
-	if(CurChar == '(')
+	if(CurChar == '(') {
 		CurNode->left = make_tree(f, CurNode);
-		
+		(CurNode->ChildQt)++;
+	}
 	CurChar = fgetc(f);
 	ungetc(CurChar, f);
-	if(CurChar == '(')
+	if(CurChar == '(') {
 		CurNode->right = make_tree(f, CurNode);
-		
+		(CurNode->ChildQt)++;
+	}
 	CHECK_CHAR(')')
 	return CurNode;
 }
@@ -195,37 +179,6 @@ Node* Differentiator :: simplification(Node* CurNode) {
 	return CurNode;
 }
 //======================================================================
-void Differentiator :: dump() {
-	FILE* DumpFile;
-	FOPEN(DumpFile, "dumpfile.gv", "w")
-	fprintf(DumpFile,"digraph graf{\n"); 
-	NodeDump(DifTree,DumpFile); 
-	fprintf(DumpFile,"}"); 
-	FCLOSE(DumpFile); 
-	system ("dot dumpfile.gv -Tpng -o dumpfile.png");
-	system ("xdot dumpfile.gv");
-}
-void Differentiator :: NodeDump(Node* CurNode, FILE* DumpFile) { 
-	fprintf (DumpFile, "treeNode_%p [label=\"\\l", CurNode);
-#define DEF_DATA(Str, Type, Data, Function, priority) {								\
-	if(CurNode->type == Type && Type != TYPE_CONST && CurNode->data == Data)		\
-		fprintf(DumpFile, Str);												\
-}
-#include "def_data.cxx"
-#undef DEF_DATA
-	if(CurNode->type == TYPE_CONST)
-		fprintf(DumpFile, "%lg", CurNode->data);
-		fprintf(DumpFile, "\"]\n");
-	if(CurNode->left) {
-		fprintf (DumpFile, "treeNode_%p->treeNode_%p\n", CurNode, CurNode->left);
-		NodeDump (CurNode->left, DumpFile); 
-	}
-	if(CurNode->right) {
-		fprintf (DumpFile, "treeNode_%p->treeNode_%p\n", CurNode, CurNode->right);
-		NodeDump (CurNode->right, DumpFile); 
-	}
-}
-//======================================================================
 void Differentiator :: differentiator() {
 	DifTree = d(tree);
 	DifTree = simplification(DifTree);
@@ -280,100 +233,242 @@ void visitor(Node* CurNode, Passes pass, void act(Node*)) {
 		}
 }
 //======================================================================
-void Differentiator :: TexDump(FILE* f) {
-	printf("XUUUI");
-	fprintf(f, "\\documentclass{article}\n"
-				"\\usepackage[a4paper,margin=6mm]{geometry}\n"
-				"\\usepackage{amsmath}\n"
-				"\\usepackage[utf8]{inputenc}\n"
-				"\\usepackage[T2A]{fontenc}\n"
-				"\\usepackage[russian]{babel}\n"
-				"\\usepackage{hyperref}\n"
-				"%%\\title{\\LaTeX\\  Derivation}\n"
-				"%%\\author{asjklksejfRRRR}\n"
-				"\\begin{document}\n"
-				"%%\\maketitle\n"
-				"\\fontsize{8}{8pt}\\selectfont\n"
-				"\\begin{equation}\n");
-	TexPrintf(f,DifTree);
-	fprintf(f, "\\end{equation}\n"
-				"\\end{document}\n");
-}
-//======================================================================
-void Differentiator :: TexPrintf(FILE* f, Node* CurNode) {
-	if(!CurNode)
-		return;
-	int scobki = ((CurNode->parent) && CurNode->GetPriority() < CurNode->parent->GetPriority());
-	if(scobki)
-		fprintf(f, "\\left(");
-	switch(CurNode->type) {
-		case TYPE_ACTION:
-			switch((int)CurNode->data) {
-				case FUNC_ADD:
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "+");
-					TexPrintf(f, CurNode->right);
-					break;
-				case FUNC_SUB:
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "-");
-					TexPrintf(f, CurNode->right);
-					break;
-				case FUNC_MUL:
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "*");
-					TexPrintf(f, CurNode->right);
-				case FUNC_DIV:
-					fprintf(f, "\\frac{");
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "}{");
-					TexPrintf(f, CurNode->right);
-					fprintf(f, "}");
-					break;
-				case FUNC_DEG:
-					fprintf(f, "{");
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "}^{");
-					TexPrintf(f, CurNode->right);
-					fprintf(f, "}");
-					break;
-				case FUNC_COS:
-					fprintf(f, "\\cos{");
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "}");
-					break;
-				case FUNC_SIN:
-					fprintf(f, "\\sin{");
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "}");
-					break;
-				case FUNC_LN:
-					fprintf(f, "\\log{");
-					TexPrintf(f, CurNode->left);
-					fprintf(f, "}");
-					break;
-			}
-			break;
-		case TYPE_CONST:
-			fprintf(f, "%lg", CurNode->data);
-			break;
-		case TYPE_VAR:
-			fprintf(f, "x");
-			break;
+void Differentiator :: ToNarnoe(Node* CurNode) {
+	for(int i = 0; i < CurNode->ChildQt; i++) {
+		if(CurNode->children[i])
+			ToNarnoe(CurNode->children[i]);
 	}
-	if(scobki)
-		fprintf(f, "\\right)");
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_SUB) {
+		CurNode->data = FUNC_ADD;
+		Node* Right = new Node("*", CurNode);
+		Right->left = new Node("-1", Right);
+		Right->right = CurNode->right;
+		CurNode->right->parent = Right;
+		CurNode->right = Right;
+		Right->ChildQt = 2;
+	}
+#define LINK_ADD_MUL_WITH_ONE_NODE(func) {														\
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_##func) {							\
+		for(int i = 0; i < CurNode->ChildQt; i++) {												\
+			Node* CurChild = CurNode->children[i];												\
+			if((CurChild) && CurChild->type == TYPE_ACTION && CurChild->data == FUNC_##func) {	\
+				CurNode->children[i] = c(CurChild->children[0]);								\
+				CurNode->children[i]->parent = CurNode;											\
+				for(int j = 1; j < CurChild->ChildQt; j++) {									\
+					CurNode->children[(CurNode->ChildQt)] = c(CurChild->children[j]);			\
+					CurNode->children[(CurNode->ChildQt)++]->parent = CurNode;					\
+				}																				\
+			delete CurChild;																	\
+			}																					\
+		}																						\
+	return;																						\
+	}																							\
+}
+	LINK_ADD_MUL_WITH_ONE_NODE(ADD)
+	LINK_ADD_MUL_WITH_ONE_NODE(MUL)
+}
+#undef LINK_ADD_MUL_WITH_ONE_NODE
+//======================================================================
+void Differentiator :: ToBinarnoe(Node* CurNode) {
+#define ADD_MUL_TO_BINAR(func, act) {																\
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_##func && CurNode->ChildQt > 2) {	\
+		Node* Left = new Node(act, CurNode);											\
+		for(int i = 0; i < CurNode->ChildQt - 1; i++) {									\
+			CurNode->children[i]->parent = Left;										\
+			Left->children[i] = CurNode->children[i];									\
+			CurNode->children[i] = NULL;												\
+		}																				\
+		Left->ChildQt = CurNode->ChildQt - 1;											\
+		CurNode->right = CurNode->children[CurNode->ChildQt -1];						\
+		CurNode->children[CurNode->ChildQt -1] = NULL;									\
+		CurNode->left = Left;															\
+		CurNode->ChildQt = 2;															\
+	}																					\
+}
+	ADD_MUL_TO_BINAR(ADD, "+")
+	ADD_MUL_TO_BINAR(MUL, "*")
+	if(CurNode->left)
+		ToBinarnoe(CurNode->left);
+	if(CurNode->right)
+		ToBinarnoe(CurNode->right);
+}
+void Differentiator :: SvertkaConstant(Node*CurNode) {
+	for(int i = 0; i < CurNode->ChildQt; i++) {
+		if(CurNode->children[i])
+			SvertkaConstant(CurNode->children[i]);
+	}
+#define SVERTKA_ADD_MUL(func, act) {													\
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_##func) {					\
+		for(int i = 0; i < CurNode->ChildQt; i++) {										\
+			if(CurNode->children[i]->type == TYPE_CONST) {								\
+				for(int j = i + 1; j < CurNode->ChildQt; j++) {							\
+					if(CurNode->children[j]->type == TYPE_CONST) {						\
+						CurNode->children[i]->data act CurNode->children[j]->data;		\
+						delete CurNode->children[j];									\
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];	\
+						CurNode->children[CurNode->ChildQt - 1] = NULL;					\
+						(CurNode->ChildQt)--;											\
+						j--;															\
+					}																	\
+				}																		\
+				break;																	\
+			}																			\
+		}																				\
+	}																					\
+}
+	SVERTKA_ADD_MUL(ADD, +=)
+	SVERTKA_ADD_MUL(MUL, *=)
+	AddMulWithOneSon(CurNode);
 }
 //======================================================================
-int Node :: GetPriority() {
-#define DEF_DATA(Str, Type, Data, Function, Priority) {								\
-	if((type == Type && Type != TYPE_CONST && data == Data) || (type == Type && Type == TYPE_CONST))	\
-		return Priority;														\
-}
-#include "def_data.cxx"
-#undef DEF_DATA
+int Differentiator :: compare(Node* n1, Node* n2) {
+	if(n1->type == n2->type && n1->data == n2->data && n1->ChildQt == n2->ChildQt) {
+		if(n1->ChildQt > 0) {
+			for(int i = 0; i < n1->ChildQt; i++) {
+				if(!compare(n1->children[i], n2->children[i]))
+					return 0;
+			}
+		}
+		return 1;
+	}
 	return 0;
 }
+//======================================================================
+double Differentiator :: CheckSimilarMultipliers(Node* n1, Node* n2) {
+	if(n1->type == TYPE_ACTION && n1->data == FUNC_DEG && n1->right->type == TYPE_CONST && compare(n1->left, n2))
+		return n1->right->data + 1;
+	if(n2->type == TYPE_ACTION && n2->data == FUNC_DEG && n2->right->type == TYPE_CONST && compare(n2->left, n1))
+		return n2->right->data + 1;
+	if(n1->type == TYPE_ACTION && n1->data == FUNC_DEG && n1->right->type == TYPE_CONST &&
+		n2->type == TYPE_ACTION && n2->data == FUNC_DEG && n2->right->type == TYPE_CONST && compare(n2->left, n1->left))
+		return n1->right->data + n2->right->data;
+	if(compare(n1, n2))
+		return 2;
+	return 0;
+}
+//======================================================================
+double Differentiator :: CheckSimilarSummands(Node* n1, Node* n2) {
+	if(n1->type == TYPE_ACTION && n1->data == FUNC_MUL && n1->ChildQt == 2 && n1->left->type == TYPE_CONST) {
+		if(compare(n1->right, n2))
+			return n1->left->data + 1;
+		if(n2->type == TYPE_ACTION && n2->data == FUNC_MUL && n2->ChildQt == 2) {
+			if(n2->left->type == TYPE_CONST && compare(n1->right, n2->right))
+				return n1->left->data + n2->left->data;
+			if(n2->right->type == TYPE_CONST && compare(n1->right, n2->left))
+				return n1->left->data + n2->right->data;
+		}
+	}
+	if(n1->type == TYPE_ACTION && n1->data == FUNC_MUL && n1->ChildQt == 2 && n1->right->type == TYPE_CONST) {
+		if(compare(n1->left, n2))
+			return n1->right->data + 1;
+		if(n2->type == TYPE_ACTION && n2->data == FUNC_MUL && n2->ChildQt == 2) {
+			if(n2->left->type == TYPE_CONST && compare(n1->left, n2->right))
+				return n1->right->data + n2->left->data;
+			if(n2->right->type == TYPE_CONST && compare(n1->left, n2->left))
+				return n1->right->data + n2->right->data;
+		}
+	}
+	if(n2->type == TYPE_ACTION && n2->data == FUNC_MUL && n2->ChildQt == 2) {
+		if(n2->left->type == TYPE_CONST && compare(n1, n2->right))
+			return 1 + n2->left->data;
+		if(n2->right->type == TYPE_CONST && compare(n1, n2->left))
+			return 1 + n2->right->data;
+	}
+	if(compare(n1, n2))
+		return 2;
+	return 0;
+}
+//======================================================================
+void Differentiator :: PrivedeniePodobnyh(Node*CurNode) {
+	for(int i = 0; i < CurNode->ChildQt; i++) {
+		if(CurNode->children[i])
+			PrivedeniePodobnyh(CurNode->children[i]);
+	}
+	PrivedeniePodobnyhMnojitelei(CurNode);
+	PrivedeniePodobnyhSlagaemyh(CurNode);
+	//AddMulWithOneSon(CurNode);
+}
+//======================================================================
+void Differentiator :: PrivedeniePodobnyhMnojitelei(Node* CurNode) {
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_MUL) {
+		for(int i = 0; i < CurNode->ChildQt; i++) {
+			for(int j = i + 1; j < CurNode->ChildQt; j++) {
+				double deg = CheckSimilarMultipliers(CurNode->children[i], CurNode->children[j]);
+				if(deg) {
+					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_DEG && 
+					CurNode->children[i]->right->type == TYPE_CONST) {
+						CurNode->children[i]->right->data = deg;
+						delete CurNode->children[j];
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
+						CurNode->children[--(CurNode->ChildQt)] = NULL;
+					}
+					else {
+						Node* NewChild = new Node("^", CurNode);
+						NewChild->ChildQt = 2;
+						NewChild->right = new Node("1", NewChild);
+						NewChild->right->data = deg;
+						NewChild->left = CurNode->children[i];
+						CurNode->children[i]->parent = NewChild;
+						CurNode->children[i] = NewChild;
+						delete CurNode->children[j];
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
+						CurNode->children[--(CurNode->ChildQt)] = NULL;
+					}
+				j--;
+				}
+			}
+		}
+	}
+}
+//======================================================================
+void Differentiator :: PrivedeniePodobnyhSlagaemyh(Node* CurNode) {
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_ADD) {
+		for(int i = 0; i < CurNode->ChildQt; i++) {
+			for(int j = i + 1; j < CurNode->ChildQt; j++) {
+				double deg = CheckSimilarSummands(CurNode->children[i], CurNode->children[j]);
+				if(deg) {
+					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_MUL && 
+					CurNode->children[i]->right->type == TYPE_CONST) {
+						CurNode->children[i]->right->data = deg;
+						delete CurNode->children[j];
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
+						CurNode->children[--(CurNode->ChildQt)] = NULL;
+					}
+					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_MUL && 
+					CurNode->children[i]->left->type == TYPE_CONST) {
+						CurNode->children[i]->left->data = deg;
+						delete CurNode->children[j];
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
+						CurNode->children[--(CurNode->ChildQt)] = NULL;
+					}
+					else {
+						Node* NewChild = new Node("*", CurNode);
+						NewChild->ChildQt = 2;
+						NewChild->right = new Node("1", NewChild);
+						NewChild->right->data = deg;
+						NewChild->left = CurNode->children[i];
+						CurNode->children[i]->parent = NewChild;
+						CurNode->children[i] = NewChild;
+						delete CurNode->children[j];
+						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
+						CurNode->children[--(CurNode->ChildQt)] = NULL;
+					}
+				j--;
+				}
+			}
+		}
+	}
+}
+//======================================================================
+void Differentiator :: AddMulWithOneSon(Node* CurNode) {
+	if(CurNode->type == TYPE_ACTION && (CurNode->data == FUNC_ADD || CurNode->data == FUNC_MUL) && CurNode->ChildQt == 1) {
+		CurNode->type = CurNode->children[0]->type;
+		CurNode->data = CurNode->children[0]->data;
+		CurNode->ChildQt = 0;
+		delete CurNode->children[0];
+		CurNode->children[0] = NULL;
+	}
+}
 
 
 
@@ -386,3 +481,19 @@ int Node :: GetPriority() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+	
