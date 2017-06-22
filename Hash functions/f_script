@@ -1,0 +1,2 @@
+set xrange [-1:258]
+plot "data.txt" using 1:2 with boxes
