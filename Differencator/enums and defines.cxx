@@ -11,7 +11,9 @@ enum FUNCTIONS {
 	FUNC_DEG,
 	FUNC_COS,
 	FUNC_SIN,
-	FUNC_LN
+	FUNC_LN,
+	FUNC_VAR,
+	FUNC_CONST
 };
 enum Tree_Status {
 	STATUS_OK,
@@ -35,4 +37,4 @@ enum Passes {
 	PASS_PREFIX,
 	PASS_INFIX
 };
-enum {CHILDREN_QT = 10};
+enum {CHILDREN_QT = 20};

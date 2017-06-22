@@ -11,16 +11,16 @@ public:
 };
 //======================================================================
 Node :: Node(const char* str, Node* par) {
-#define DEF_DATA(Str, Type, Data, function, priority) {	\
-	if(!strcmp(str, Str)) {						\
-		type = Type;							\
-		data = Data;							\
-		for(int i = 0; i < CHILDREN_QT; i++)	\
-			children[i] = NULL;					\
-		parent = par;							\
-		ChildQt = 0;							\
-		return;									\
-	}											\
+#define DEF_DATA(Str, Type, Data, Childqt, function, priority) {		\
+	if(!strcmp(str, Str)) {												\
+		type = Type;													\
+		data = Data;													\
+		for(int i = 0; i < CHILDREN_QT; i++)							\
+			children[i] = NULL;											\
+		parent = par;													\
+		ChildQt = Childqt;												\
+		return;															\
+	}																	\
 }
 #include "def_data.cxx"
 #undef DEF_DATA
@@ -44,7 +44,7 @@ Node :: ~Node() {
 }
 //======================================================================
 int Node :: GetPriority() {
-#define DEF_DATA(Str, Type, Data, Function, Priority) {								\
+#define DEF_DATA(Str, Type, Data, Function, Childqt, Priority) {								\
 	if((type == Type && Type != TYPE_CONST && data == Data) || (type == Type && Type == TYPE_CONST))	\
 		return Priority;														\
 }

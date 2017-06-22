@@ -11,9 +11,9 @@ void Differentiator :: dump() {
 //======================================================================
 void Differentiator :: NodeDump(Node* CurNode, FILE* DumpFile) { 
 	fprintf (DumpFile, "treeNode_%p [label=\"\\l", CurNode);
-#define DEF_DATA(Str, Type, Data, Function, priority) {								\
+#define DEF_DATA(Str, Type, Data, Childqt, Function, priority) {					\
 	if(CurNode->type == Type && Type != TYPE_CONST && CurNode->data == Data)		\
-		fprintf(DumpFile, Str);												\
+		fprintf(DumpFile, Str);														\
 }
 #include "def_data.cxx"
 #undef DEF_DATA
@@ -28,24 +28,36 @@ void Differentiator :: NodeDump(Node* CurNode, FILE* DumpFile) {
 	}
 }
 //======================================================================
-void Differentiator :: TexDump(FILE* f) {
+void Differentiator :: TexDump() {
 	printf("XUUUI");
-	fprintf(f, "\\documentclass{article}\n"
-				"\\usepackage[a4paper,margin=6mm]{geometry}\n"
-				"\\usepackage{amsmath}\n"
-				"\\usepackage[utf8]{inputenc}\n"
-				"\\usepackage[T2A]{fontenc}\n"
-				"\\usepackage[russian]{babel}\n"
-				"\\usepackage{hyperref}\n"
-				"%%\\title{\\LaTeX\\  Derivation}\n"
-				"%%\\author{asjklksejfRRRR}\n"
+	FILE* TexFile;
+	FOPEN(TexFile, "TexDump.tex", "w")
+	fprintf(TexFile, "\\documentclass{article}\n"
 				"\\begin{document}\n"
-				"%%\\maketitle\n"
-				"\\fontsize{8}{8pt}\\selectfont\n"
 				"\\begin{equation}\n");
-	TexPrintf(f,DifTree);
-	fprintf(f, "\\end{equation}\n"
+	TexPrintf(TexFile,DifTree);
+	fprintf(TexFile, "\n\\end{equation}\n"
 				"\\end{document}\n");
+	
+	FCLOSE(TexFile)
+	system ("pdflatex TexDump.tex");
+	system ("evince TexDump.pdf");
+}
+void Differentiator :: BeginDump() {
+	FOPEN(TexFile, "TexDump.tex", "w")
+	fprintf(TexFile, "\\documentclass{article}\n"
+				"\\begin{document}\n");
+}
+void Differentiator :: AddDump() {
+	fprintf(TexFile, "\\begin{equation}\n");
+	TexPrintf(TexFile,DifTree);
+	fprintf(TexFile, "\n\\end{equation}\n");
+}
+void Differentiator :: EndDump() {
+	fprintf(TexFile, "\\end{document}\n");
+	FCLOSE(TexFile)
+	system ("pdflatex TexDump.tex");
+	system ("evince TexDump.pdf");
 }
 //======================================================================
 void Differentiator :: TexPrintf(FILE* f, Node* CurNode) {
@@ -71,6 +83,7 @@ void Differentiator :: TexPrintf(FILE* f, Node* CurNode) {
 					TexPrintf(f, CurNode->left);
 					fprintf(f, "*");
 					TexPrintf(f, CurNode->right);
+					break;
 				case FUNC_DIV:
 					fprintf(f, "\\frac{");
 					TexPrintf(f, CurNode->left);

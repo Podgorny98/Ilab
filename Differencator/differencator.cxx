@@ -12,21 +12,25 @@ typedef double TreeNodeType;
 class Differentiator {
 private:
 	Node* make_tree(FILE* f, Node* CurParent);
-	Node* d(Node* CurNode);	//дифференцирует дерево 
-	Node* c(Node* CurNode);	//копирует дерево //TODO WTF GAVNO ZHOPA XYUNA NAMES
+	Node* dif(Node* CurNode);	//дифференцирует дерево 
+	Node* copy(Node* CurNode);	//копирует дерево
 	Node* simplification(Node* CurNode);	//делает дерево проще
-	//void ToBinarnoe(Node* CurNode);
-	//void ToNarnoe(Node* CurNode);
+	void GeneralSimplification(Node* CurNode);
+	void ToBinarnoe(Node* CurNode);
+	void ToNarnoe(Node* CurNode);
 	void save(FILE* f, Node* CurNode);
 	void NodeDump(Node* CurNode, FILE* DumpFile);
 	int IsLeft(Node* CurNode);
 	void visitor(Node* CurNode, Passes pass, void act(Node*));
+	Node* PrivedeniePodobnyh(Node* CurNode);
+	Node* SvertkaConstant(Node* CurNode);
 	int compare(Node* node1, Node* node2);
 	double CheckSimilarSummands(Node* n1, Node* n2);
 	double CheckSimilarMultipliers(Node* n1, Node* n2);
 	void PrivedeniePodobnyhSlagaemyh(Node* CurNode);
 	void PrivedeniePodobnyhMnojitelei(Node* CurNode);
-	void AddMulWithOneSon(Node* CurNode);	//упрощает дерево если у + или * один ребёнок
+	Node* AddMulWithOneSon(Node* CurNode);	//упрощает дерево если у + или * один ребёнок
+	int WhatSon(Node* CurNode);	//определяе каким ребёнком является узел у родителя
 	Node* d_add(Node* CurNode);
 	Node* d_sub(Node* CurNode);
 	Node* d_mul(Node* CurNode); //TODO use defines
@@ -43,42 +47,51 @@ private:
 	Node* simple_deg_one(Node* CurNode);
 	Node* simple_add_zero(Node* CurNode); //MORE DEFINES
 	Node* simple_sub_zero(Node* CurNode);
+	Node* simple_div_zero(Node* CurNode);
+	Node* simple_div_one(Node* CurNode);
 	void TexPrintf(FILE*f, Node* CurNode);
 public:
 	Node* tree;
 	Node* DifTree;
 	Differentiator(FILE* f);
 	~Differentiator();
-	void PrivedeniePodobnyh(Node* CurNode);
-	void ToNarnoe(Node* CurNode);
-	void ToBinarnoe(Node* CurNode);
-	void SvertkaConstant(Node* CurNode);
+	FILE* TexFile;
+	void BeginDump();
+	void AddDump();
+	void EndDump();
 	void differentiator();
 	void print(Node* tree);
 	void dump();
-	void TexDump(FILE* f);
+	void TexDump();
 	void ok(Node* CurNode);
 };
 #include "functions.cxx"
 #include "dump functions.cxx"
 //======================================================================
 int main() {
+	{
 	FILE* in;
 	FOPEN(in, "in", "r")
-	//FILE* TexFile;
-	//FOPEN(TexFile, "TexDump.tex", "w")
 	Differentiator a(in);
-	a.ToNarnoe(a.tree);
-	a.SvertkaConstant(a.tree);
-	a.PrivedeniePodobnyh(a.tree);
-	//a.ToBinarnoe(a.tree);
-	//a.differentiator();
-	a.dump();
-	//a.TexDump(TexFile);
+	//a.dump();
+	a.differentiator();
+	
+	//a.TexDump();
 	FCLOSE(in)
-	//FCLOSE(TexFile)
+	}
+	{
+	FILE* in;
+	FOPEN(in, "Otvet", "r")
+	
+	Differentiator a(in);
+	a.differentiator();
+	a.dump();
+	a.TexDump();
+	FCLOSE(in)
 	return 0;
+	}
 }
+
 //======================================================================
 Differentiator ::Differentiator(FILE* f) {
 	tree = make_tree(f, NULL);
@@ -86,10 +99,10 @@ Differentiator ::Differentiator(FILE* f) {
 Differentiator :: ~Differentiator() {
 	FILE* out; //TODO output file from main
 	FOPEN(out, "Otvet", "w")
-	//save(out, DifTree);
+	save(out, DifTree);
 	FCLOSE(out)
 	delete tree;
-	//delete DifTree;
+	delete DifTree;
 	tree = NULL;
 	DifTree = NULL;
 }
@@ -108,19 +121,17 @@ Node* Differentiator ::  make_tree(FILE* f, Node* CurFather) {
 	CHECK_CHAR('(')
 	fscanf(f, "%10[^()]", data);
 	Node* CurNode = new Node(data, CurFather);
-	
+
 	CurChar = fgetc(f);
 	ungetc(CurChar, f);
-	if(CurChar == '(') {
+	if(CurChar == '(') 
 		CurNode->left = make_tree(f, CurNode);
-		(CurNode->ChildQt)++;
-	}
+
 	CurChar = fgetc(f);
 	ungetc(CurChar, f);
-	if(CurChar == '(') {
+	if(CurChar == '(')
 		CurNode->right = make_tree(f, CurNode);
-		(CurNode->ChildQt)++;
-	}
+
 	CHECK_CHAR(')')
 	return CurNode;
 }
@@ -128,11 +139,10 @@ Node* Differentiator ::  make_tree(FILE* f, Node* CurFather) {
 //======================================================================
 void Differentiator :: save(FILE* f, Node* CurNode) {
 	fprintf(f, "(");
-#define DEF_DATA(Str, Type, Data, function, priority) {		\
+#define DEF_DATA(Str, Type, Data, Childqt, Function, priority) {				\
 	if(CurNode->type == Type && Type != TYPE_CONST && CurNode->data == Data) {	\
-		fprintf(f, Str);												\
-		return;	\
-	}	\
+		fprintf(f, Str);														\
+	}																			\
 }
 #include "def_data.cxx"
 #undef DEF_DATA
@@ -145,11 +155,11 @@ void Differentiator :: save(FILE* f, Node* CurNode) {
 	fprintf(f, ")");
 }
 //======================================================================
-Node* Differentiator :: d(Node* CurNode) {
+Node* Differentiator :: dif(Node* CurNode) {
 	Node* DifNode = NULL;
-#define DEF_DATA(Str, Type, Data, function, priority) {														\
+#define DEF_DATA(Str, Type, Data, Childqt, Function, priority) {														\
 	if((CurNode->type == Type && Type != TYPE_CONST && CurNode->data == Data) || (CurNode->type == Type && Type == TYPE_CONST))	\
-		DifNode = function(CurNode);																\
+		DifNode = Function(CurNode);																\
 }
 #include "def_data.cxx"
 #undef DEF_DATA
@@ -165,8 +175,7 @@ Node* Differentiator :: simplification(Node* CurNode) {
 	if(CurNode->type == TYPE_ACTION && CurNode->data == operation &&									\
 		(((CurNode->left) && CurNode->left->type == TYPE_CONST && CurNode->left->data == num)			\
 		|| ((CurNode->right) && CurNode->right->type == TYPE_CONST && CurNode->right->data == num))) {	\
-		CurNode = function(CurNode);																				\
-		return CurNode;																							\
+		CurNode = function(CurNode);																	\
 	}																									\
 }
 	SIMPLE(FUNC_ADD, 0, simple_add_zero)
@@ -175,13 +184,29 @@ Node* Differentiator :: simplification(Node* CurNode) {
 	SIMPLE(FUNC_MUL, 0, simple_mul_zero)
 	SIMPLE(FUNC_DEG, 1, simple_deg_one)
 	SIMPLE(FUNC_DEG, 0, simple_deg_zero)
+	SIMPLE(FUNC_DIV, 0, simple_div_zero)
+	SIMPLE(FUNC_DIV, 1, simple_div_one)
 #undef SIMPLE
+	GeneralSimplification(CurNode);
 	return CurNode;
 }
 //======================================================================
 void Differentiator :: differentiator() {
-	DifTree = d(tree);
-	DifTree = simplification(DifTree);
+	ToNarnoe(tree);
+	tree = SvertkaConstant(tree);
+	ToBinarnoe(tree);
+	DifTree = dif(tree);
+	BeginDump();
+	AddDump();
+	for(int i = 0; i < 36; i++) {
+		DifTree = simplification(DifTree);
+		ToNarnoe(DifTree);
+		DifTree = SvertkaConstant(DifTree);
+		DifTree = PrivedeniePodobnyh(DifTree);
+		ToBinarnoe(DifTree);
+		AddDump();
+	}
+	EndDump();
 }
 //======================================================================
 int Differentiator :: IsLeft(Node* CurNode) {
@@ -247,15 +272,23 @@ void Differentiator :: ToNarnoe(Node* CurNode) {
 		CurNode->right = Right;
 		Right->ChildQt = 2;
 	}
+	else if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_DIV) {
+		Node* Right = CurNode->right;
+		CurNode->data = FUNC_MUL;
+		CurNode->right = new Node("/", CurNode);
+		CurNode->right->left = new Node("1", CurNode->right);
+		CurNode->right->right = Right;
+		Right->parent = CurNode->right;
+	}
 #define LINK_ADD_MUL_WITH_ONE_NODE(func) {														\
 	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_##func) {							\
 		for(int i = 0; i < CurNode->ChildQt; i++) {												\
 			Node* CurChild = CurNode->children[i];												\
 			if((CurChild) && CurChild->type == TYPE_ACTION && CurChild->data == FUNC_##func) {	\
-				CurNode->children[i] = c(CurChild->children[0]);								\
+				CurNode->children[i] = copy(CurChild->children[0]);								\
 				CurNode->children[i]->parent = CurNode;											\
 				for(int j = 1; j < CurChild->ChildQt; j++) {									\
-					CurNode->children[(CurNode->ChildQt)] = c(CurChild->children[j]);			\
+					CurNode->children[(CurNode->ChildQt)] = copy(CurChild->children[j]);			\
 					CurNode->children[(CurNode->ChildQt)++]->parent = CurNode;					\
 				}																				\
 			delete CurChild;																	\
@@ -292,7 +325,7 @@ void Differentiator :: ToBinarnoe(Node* CurNode) {
 	if(CurNode->right)
 		ToBinarnoe(CurNode->right);
 }
-void Differentiator :: SvertkaConstant(Node*CurNode) {
+Node* Differentiator :: SvertkaConstant(Node*CurNode) {
 	for(int i = 0; i < CurNode->ChildQt; i++) {
 		if(CurNode->children[i])
 			SvertkaConstant(CurNode->children[i]);
@@ -318,7 +351,16 @@ void Differentiator :: SvertkaConstant(Node*CurNode) {
 }
 	SVERTKA_ADD_MUL(ADD, +=)
 	SVERTKA_ADD_MUL(MUL, *=)
-	AddMulWithOneSon(CurNode);
+	CurNode = AddMulWithOneSon(CurNode);
+	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_DIV &&
+	CurNode->left->type == TYPE_CONST && CurNode->right->type == TYPE_CONST) {
+		CurNode->type = TYPE_CONST;
+		CurNode->data = CurNode->left->data / CurNode->right->data;
+		delete CurNode->left;
+		delete CurNode->right;
+		CurNode->left = CurNode->right = NULL;
+	}
+	return CurNode;
 }
 //======================================================================
 int Differentiator :: compare(Node* n1, Node* n2) {
@@ -379,15 +421,37 @@ double Differentiator :: CheckSimilarSummands(Node* n1, Node* n2) {
 	return 0;
 }
 //======================================================================
-void Differentiator :: PrivedeniePodobnyh(Node*CurNode) {
+Node* Differentiator :: PrivedeniePodobnyh(Node*CurNode) {
 	for(int i = 0; i < CurNode->ChildQt; i++) {
 		if(CurNode->children[i])
-			PrivedeniePodobnyh(CurNode->children[i]);
+			CurNode->children[i] = PrivedeniePodobnyh(CurNode->children[i]);
 	}
 	PrivedeniePodobnyhMnojitelei(CurNode);
 	PrivedeniePodobnyhSlagaemyh(CurNode);
-	//AddMulWithOneSon(CurNode);
+	CurNode = AddMulWithOneSon(CurNode);
+	return CurNode;
 }
+//======================================================================
+#define NEWCHILD(str) {												\
+	Node* NewChild = new Node(str, CurNode);						\
+	NewChild->ChildQt = 2;											\
+	NewChild->right = new Node("1", NewChild);						\
+	NewChild->right->data = deg;									\
+	NewChild->left = CurNode->children[i];							\
+	CurNode->children[i]->parent = NewChild;						\
+	CurNode->children[i] = NewChild;								\
+	delete CurNode->children[j];									\
+	CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];	\
+	CurNode->children[--(CurNode->ChildQt)] = NULL;					\
+}
+#define PRIVEDENIE(child, func)																			\
+	if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_##func && 	\
+	CurNode->children[i]->child->type == TYPE_CONST) {											\
+		CurNode->children[i]->child->data = deg;												\
+		delete CurNode->children[j];															\
+		CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];							\
+		CurNode->children[--(CurNode->ChildQt)] = NULL;											\
+	}																							
 //======================================================================
 void Differentiator :: PrivedeniePodobnyhMnojitelei(Node* CurNode) {
 	if(CurNode->type == TYPE_ACTION && CurNode->data == FUNC_MUL) {
@@ -395,24 +459,9 @@ void Differentiator :: PrivedeniePodobnyhMnojitelei(Node* CurNode) {
 			for(int j = i + 1; j < CurNode->ChildQt; j++) {
 				double deg = CheckSimilarMultipliers(CurNode->children[i], CurNode->children[j]);
 				if(deg) {
-					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_DEG && 
-					CurNode->children[i]->right->type == TYPE_CONST) {
-						CurNode->children[i]->right->data = deg;
-						delete CurNode->children[j];
-						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
-						CurNode->children[--(CurNode->ChildQt)] = NULL;
-					}
+					PRIVEDENIE(right, DEG)
 					else {
-						Node* NewChild = new Node("^", CurNode);
-						NewChild->ChildQt = 2;
-						NewChild->right = new Node("1", NewChild);
-						NewChild->right->data = deg;
-						NewChild->left = CurNode->children[i];
-						CurNode->children[i]->parent = NewChild;
-						CurNode->children[i] = NewChild;
-						delete CurNode->children[j];
-						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
-						CurNode->children[--(CurNode->ChildQt)] = NULL;
+						NEWCHILD("^")
 					}
 				j--;
 				}
@@ -427,31 +476,10 @@ void Differentiator :: PrivedeniePodobnyhSlagaemyh(Node* CurNode) {
 			for(int j = i + 1; j < CurNode->ChildQt; j++) {
 				double deg = CheckSimilarSummands(CurNode->children[i], CurNode->children[j]);
 				if(deg) {
-					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_MUL && 
-					CurNode->children[i]->right->type == TYPE_CONST) {
-						CurNode->children[i]->right->data = deg;
-						delete CurNode->children[j];
-						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
-						CurNode->children[--(CurNode->ChildQt)] = NULL;
-					}
-					if(CurNode->children[i]->type == TYPE_ACTION && CurNode->children[i]->data == FUNC_MUL && 
-					CurNode->children[i]->left->type == TYPE_CONST) {
-						CurNode->children[i]->left->data = deg;
-						delete CurNode->children[j];
-						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
-						CurNode->children[--(CurNode->ChildQt)] = NULL;
-					}
+					PRIVEDENIE(left, MUL)
+					else PRIVEDENIE(right, MUL)
 					else {
-						Node* NewChild = new Node("*", CurNode);
-						NewChild->ChildQt = 2;
-						NewChild->right = new Node("1", NewChild);
-						NewChild->right->data = deg;
-						NewChild->left = CurNode->children[i];
-						CurNode->children[i]->parent = NewChild;
-						CurNode->children[i] = NewChild;
-						delete CurNode->children[j];
-						CurNode->children[j] = CurNode->children[CurNode->ChildQt - 1];
-						CurNode->children[--(CurNode->ChildQt)] = NULL;
+						NEWCHILD("*")
 					}
 				j--;
 				}
@@ -459,41 +487,35 @@ void Differentiator :: PrivedeniePodobnyhSlagaemyh(Node* CurNode) {
 		}
 	}
 }
+#undef PRIVEDENIE
+#undef NEWCHILD
 //======================================================================
-void Differentiator :: AddMulWithOneSon(Node* CurNode) {
+Node* Differentiator :: AddMulWithOneSon(Node* CurNode) {
 	if(CurNode->type == TYPE_ACTION && (CurNode->data == FUNC_ADD || CurNode->data == FUNC_MUL) && CurNode->ChildQt == 1) {
-		CurNode->type = CurNode->children[0]->type;
-		CurNode->data = CurNode->children[0]->data;
-		CurNode->ChildQt = 0;
-		delete CurNode->children[0];
-		CurNode->children[0] = NULL;
+		if(CurNode->children[0]->ChildQt == 0) {
+			CurNode->type = CurNode->children[0]->type;
+			CurNode->data = CurNode->children[0]->data;
+			CurNode->ChildQt = 0;
+			delete CurNode->children[0];
+			CurNode->children[0] = NULL;
+		}
+		else {
+			Node* cur = CurNode;
+			CurNode = copy(CurNode->children[0]);
+			if(cur->parent) {
+				CurNode->parent = cur->parent;
+				cur->parent->children[WhatSon(cur)] = CurNode;
+			}
+			delete cur;
+		}
 	}
+	return CurNode;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
+//======================================================================
+int Differentiator :: WhatSon(Node* CurNode) {
+	for(int i = 0; i < CurNode->parent->ChildQt; i++) {
+		if(CurNode->parent->children[i] == CurNode)
+			return i;
+	}
+	return -1;
+}
