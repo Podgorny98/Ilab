@@ -1,0 +1,80 @@
+enum {MAX_TOKEN_LEN = 101};
+
+enum TOKEN_TYPES{
+    TYPE_KEY_WORD,
+    TYPE_IDENTIFIER,
+    TYPE_SKOBKI_KRYGLYE,
+    TYPE_OPERATOR,
+    TYPE_CONST,
+    TYPE_TOCHKA_S_ZAPYATOI,
+    TYPE_ZAPYATAYA,
+    TYPE_ERROR
+};
+
+enum KEY_WORD_TYPES {
+    KEY_WORD_MAIN,
+    KEY_WORD_FUNCTION,
+    KEY_WORD_RETURN,
+    KEY_WORD_START_OP_BLOCK,
+    KEY_WORD_END_OP_BLOCK,
+    KEY_WORD_SCANF,
+    KEY_WORD_PRINTF,
+    KEY_WORD_INT,
+    KEY_WORD_IF,
+    KEY_WORD_ELSE,
+    KEY_WORD_FOR,
+    KEY_WORD_WHILE 
+};
+
+enum SKOBKI_TYPES {
+    SKOBKA_OPEN,
+    SKOBKA_CLOSE
+};
+
+enum OPERATOR_TYPES {
+    OPERATOR_ADD,
+    OPERATOR_SUB,
+    OPERATOR_MUL,
+    OPERATOR_DIV,
+    OPERATOR_ASSIGNMENT,
+    OPERATOR_EQUAL,
+    OPERATOR_NOT_EQUAL,
+    OPERATOR_LARGER,
+    OPERATOR_LARGER_EQUAL,
+    OPERATOR_LESS,
+    OPERATOR_LESS_EQUAL
+};
+   
+union union_type {
+    int i;
+    char* ch;
+};
+
+typedef union union_type union_type;
+
+enum NODE_TYPES {
+    FUNCTION,
+    IF,
+    WHILE,
+    FOR,
+    CONNECTING_NODE,
+    VARIABLE,
+    CONST,
+    OPERATOR,
+    SCAN,
+    PRINT,
+    RETURN
+};
+
+enum {
+    MAX_FUNCTIONS_QT = 50,
+    MAX_ARGS_QT = 10,
+    MAX_NEW_VARS_QT = 100,
+    MAX_VAR_QT = 30
+};
+
+typedef enum NODE_TYPES NODE_TYPES;
+
+enum { MAX_CHILDREN_QT = 300 };
+
+

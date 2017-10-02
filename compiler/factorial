@@ -1,0 +1,46 @@
+function factorial(a) {
+
+    int b;
+
+    int v;
+
+    if(a > 1) {
+
+        b = a - 1;
+
+        v = a * factorial(b);
+
+    }
+
+    else {
+
+        v = 1;
+
+    }
+
+    return v;
+
+}
+
+/*you
+
+  you
+
+*/
+
+function main() {
+
+    int a;
+
+    int b;
+
+    scanf(a);    
+
+    b = factorial(a);
+
+    printf(b);
+
+    return 0;
+
+}
+
